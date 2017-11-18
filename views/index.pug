@@ -1,0 +1,33 @@
+extends layout
+
+block content
+    div(class="content")
+        select
+            option(value="-1") None
+        +playerrelic
+        +playerrelic
+        +playerrelic
+        +playerrelic
+
+mixin playerrelic
+    div(class="pr" style="width: 100%")
+        datalist
+        +itemdrop(0)
+        +itemdrop(0)
+        +itemdrop(0)
+        +itemdrop(1)
+        +itemdrop(1)
+        +itemdrop(2)
+
+mixin itemdrop(rarity)
+    case rarity
+        when 0
+            span(class="rd common")
+        when 1
+            span(class="rd uncommon")
+        when 2
+            span(class="rd rare")
+    img(style="" src="images/DEPrimeDualBroncos.png")
+    div(class="txtcont")
+        span(class="txt") Vectis Prime Blueprint
+        span(class="val") 30
