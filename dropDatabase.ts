@@ -62,28 +62,37 @@ export namespace Database {
     // export let addItem = (relic: Relic) => {
     export let addItem = async (client: IDatabase<any>, relic: Relic) => {
 //    Get eraid
-        const getEraIdsQuery = `SELECT * FROM public."RelicEras"`;
-        client.one({
-            text: 'SELECT * FROM public."RelicEras" WHERE name = $1',
-            values: [relic.era]
-        }).then(era => {
-            console.log(era);
-        }).catch(err => {
-            console.log(err);
-            client.none({
-                text: 'INSERT INTO RelicEras(name) VALUES($1)',
-                values: [relic.era]
-            }).then(() => {
-                console.log("Inserted: "+relic.era);
-            }).catch(err => {
-                console.log(err);
-            })
-        })
+        const getEraIdQuery = `SELECT * FROM public."RelicEras" WHERE name = $1`;
+        const insertEraQuery = `INSERT INTO public."RelicEras"(name) VALUES($1) RETURNING id`;
+        let eraId = await insertIfNone(client, [relic.era], getEraIdQuery, insertEraQuery)['id'];
 //    Get typeid
+        const getTypeIdQuery = `SELECT * FROM public."RelicTypes" WHERE name = $1`;
+        const insertTypeQuery = `INSERT INTO public."RelicEras"(name) VALUES($1) RETURNING id`;
+        let typeId = await insertIfNone(client, [relic.type], getTypeIdQuery, insertTypeQuery)['id'];
 //    Get ratingid
 //    Get droptypeid
 //    Get itemid
 //    Make new relicdropinfo
 //    Make new relic
     };
+
+    let insertIfNone = async (client: IDatabase<any>, values: any[], selectQuery: string, insertQuery: string) => {
+        let result;
+        try {
+            result = await client.one({
+                text: selectQuery,
+                values: values
+            });
+        } catch(err) {
+            try {
+                result = await client.one({
+                    text: insertQuery,
+                    values: values
+                });
+            } catch (err) {
+                console.log(err);
+            }
+        }
+        return result || false;
+    }
 }

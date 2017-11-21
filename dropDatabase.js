@@ -60,29 +60,39 @@ var Database;
     // export let addItem = (relic: Relic) => {
     Database.addItem = (client, relic) => __awaiter(this, void 0, void 0, function* () {
         //    Get eraid
-        const getEraIdsQuery = `SELECT * FROM public."RelicEras"`;
-        client.one({
-            text: 'SELECT * FROM public."RelicEras" WHERE name = $1',
-            values: [relic.era]
-        }).then(era => {
-            console.log(era);
-        }).catch(err => {
-            console.log(err);
-            client.none({
-                text: 'INSERT INTO RelicEras(name) VALUES($1)',
-                values: [relic.era]
-            }).then(() => {
-                console.log("Inserted: " + relic.era);
-            }).catch(err => {
-                console.log(err);
-            });
-        });
+        const getEraIdQuery = `SELECT * FROM public."RelicEras" WHERE name = $1`;
+        const insertEraQuery = `INSERT INTO public."RelicEras"(name) VALUES($1) RETURNING id`;
+        let eraId = yield insertIfNone(client, [relic.era], getEraIdQuery, insertEraQuery)['id'];
         //    Get typeid
+        const getTypeIdQuery = `SELECT * FROM public."RelicTypes" WHERE name = $1`;
+        const insertTypeQuery = `INSERT INTO public."RelicEras"(name) VALUES($1) RETURNING id`;
+        let typeId = yield insertIfNone(client, [relic.type], getTypeIdQuery, insertTypeQuery)['id'];
         //    Get ratingid
         //    Get droptypeid
         //    Get itemid
         //    Make new relicdropinfo
         //    Make new relic
+    });
+    let insertIfNone = (client, values, selectQuery, insertQuery) => __awaiter(this, void 0, void 0, function* () {
+        let result;
+        try {
+            result = yield client.one({
+                text: selectQuery,
+                values: values
+            });
+        }
+        catch (err) {
+            try {
+                result = yield client.one({
+                    text: insertQuery,
+                    values: values
+                });
+            }
+            catch (err) {
+                console.log(err);
+            }
+        }
+        return result || false;
     });
 })(Database = exports.Database || (exports.Database = {}));
 //# sourceMappingURL=dropDatabase.js.map
