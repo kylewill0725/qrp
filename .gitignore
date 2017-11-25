@@ -27,3 +27,7 @@ typings/
 /qrp.iml
 /.idea/
 /bin/test.js
+/dropDatabase.js
+/dropDatabase.js.map
+/relic.js.map
+/relic.js
