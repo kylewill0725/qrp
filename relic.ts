@@ -2,9 +2,9 @@ export class Relic {
     era: String;
     type: String;
     rating: String;
-    items: Item[];
+    items: ItemDrop[];
 
-    constructor(fields?: { era: string, type: string, rating: string, items: Item[]}) {
+    constructor(fields?: { era: string, type: string, rating: string, items: ItemDrop[]}) {
         if (fields) {
             this.era = fields.era;
             this.type = fields.type;
@@ -14,7 +14,7 @@ export class Relic {
     }
 }
 
-export class Item {
+export class ItemDrop {
     name: String;
     rarity: String;
     chance: number;
