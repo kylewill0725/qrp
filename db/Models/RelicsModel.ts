@@ -6,31 +6,34 @@ export class RelicsModel {
 
     private db: IDatabase<any>;
     private pgp: IMain;
-    private queueLock: boolean = false;
-    private changeQueue: Array<Function>;
+    private static queueLock: boolean = false;
+    private static changeQueue: Array<Function>;
 
     constructor(db: any, pgp: IMain) {
         this.db = db;
         this.pgp = pgp;
     }
 
-    private addToQueue(fnCall: Function, ctx: any, params: Array<any>) {
-
+    private addToQueue(fnCall: Function) {
+        RelicsModel.changeQueue.push(fnCall);
+        if (!RelicsModel.queueLock) {
+            this.executeNextQueue();
+        }
     }
 
     private executeNextQueue() {
-        this.queueLock = true;
+        RelicsModel.queueLock = true;
         (new Promise((resolve, reject) => {
-            let fn = this.changeQueue[0];
-            this.changeQueue.shift();
+            let fn = RelicsModel.changeQueue[0];
+            RelicsModel.changeQueue.shift();
             try {
                 resolve(fn());
             } catch (e) {
                 reject(e);
             }
         })).then((result) => {
-            this.queueLock = false;
-            if (this.changeQueue.length > 0) {
+            RelicsModel.queueLock = false;
+            if (RelicsModel.changeQueue.length > 0) {
                 this.executeNextQueue();
             }
         }).catch((err) => {
@@ -40,7 +43,7 @@ export class RelicsModel {
     }
 
     addRelic(relic: Relic) : void {
-        this.changeQueue.push(functionCall((relic: Relic) => {
+        this.addToQueue(functionCall((relic: Relic) => {
 
         }, this, [relic]));
     }
