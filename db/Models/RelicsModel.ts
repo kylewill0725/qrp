@@ -1,12 +1,10 @@
 import {IMain, IDatabase} from 'pg-promise';
 import {ItemDrop, Relic} from "../../relic";
-import {Query} from "pg-promise/typescript/pg-subset";
 
 export class RelicsModel {
 
     private db: IDatabase<any>;
     private pgp: IMain;
-    private static queueLock: boolean = false;
     private static changeQueue: Array<Function>;
 
     constructor(db: any, pgp: IMain) {
@@ -14,7 +12,7 @@ export class RelicsModel {
         this.pgp = pgp;
     }
 
-    private addToQueue(fnCall: Function) {
+    private addToQueue(fnCall: Function, ...args: any[]) {
         RelicsModel.changeQueue.push(fnCall);
         if (!RelicsModel.queueLock) {
             this.executeNextQueue();
@@ -43,9 +41,9 @@ export class RelicsModel {
     }
 
     addRelic(relic: Relic) : void {
-        this.addToQueue(functionCall((relic: Relic) => {
+        this.addToQueue(async (relic: Relic) => {
 
-        }, this, [relic]));
+        }, this, [relic]);
     }
 
     addRelicDrop(relicEra: string, relicType: string, itemDrops: ItemDrop[]) : boolean {
