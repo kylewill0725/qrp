@@ -1,9 +1,9 @@
 "use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
 var express = require('express');
-exports.router = express.Router();
+var router = express.Router();
 /* GET users listing. */
-exports.router.get('/', function (req, res, next) {
+router.get('/', function (req, res, next) {
     res.send('respond with a resource');
 });
+module.exports = router;
 //# sourceMappingURL=users.js.map

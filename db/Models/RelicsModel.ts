@@ -1,7 +1,7 @@
 // import {IMain, IDatabase} from 'pg-promise';
 // import {ItemDrop, Relic} from "../../relic";
 //
-// export class RelicsModel {
+export class RelicsModel {
 //
 //     private db: IDatabase<any>;
 //     private pgp: IMain;
@@ -65,4 +65,4 @@
 //     removeRelicDrop(relicEra: string, relicType: string, itemDropName: string) : boolean {
 //         return false;
 //     }
-// }
+}
