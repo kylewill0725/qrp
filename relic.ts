@@ -1,7 +1,7 @@
 export class Relic {
-    era: String;
-    type: String;
-    rating: String;
+    era: string;
+    type: string;
+    rating: string;
     items: ItemDrop[];
 
     constructor(fields?: { era: string, type: string, rating: string, items: ItemDrop[]}) {
@@ -15,13 +15,18 @@ export class Relic {
 }
 
 export class ItemDrop {
-    name: String;
-    rarity: String;
+    name: string;
+    component: string;
+    rarity: string;
+    __dropRarity: string;
     chance: number;
-    constructor(fields?: { name: string, rarity: string, chance: number}) {
+
+    constructor(fields?: { name: string, component: string, rarity: string, dropRarity: string, chance: number}) {
         if (fields) {
             this.name = fields.name;
+            this.component = fields.component;
             this.rarity = fields.rarity;
+            this.__dropRarity = fields.dropRarity;
             this.chance = fields.chance;
         }
     }
