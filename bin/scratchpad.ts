@@ -131,7 +131,7 @@ function getItemPrices(item: Item): Promise<{avg_price: number, low: number, hig
     });
 }
 
-function getOrders(item: Item): Promise<{quantity: number, price: number, name: string}> {
+function getOrders(item: Item): Promise<{quantity: number, price: number, name: string}[]> {
     return new Promise((resolve, reject) => {
         let result = "";
         let request = https.request({
@@ -153,7 +153,7 @@ function getOrders(item: Item): Promise<{quantity: number, price: number, name: 
                     return order.user.status === "ingame" && order.order_type === "sell" && item.prices.ducats / order.platinum > 13;
                 });
 
-                resolve(filteredOrders);
+                resolve(filteredOrders.map((order) => { return {item: item,quantity: order.quantity, price: order.platinum, name: order.user.ingame_name}}));
             });
         });
         request.on('error', (err) => {
@@ -222,10 +222,41 @@ async function main() {
     }
 
     let targets = getSortedRelicDucatPerPlat().reverse().filter(value => value.value > 10);
+    let orders = [];
+    let ordersPromises = [];
     let users: string[] = [];
 
     targets.forEach(async (target) => {
-        await getOrders(items[target.name]);
+        ordersPromises.push(getOrders(items[target.name]).then(order => orders = orders.concat(order)));
+    });
+    await Promise.all(ordersPromises);
+    let ordersPerUser = {};
+    orders.forEach((order) => {
+        if (ordersPerUser[order.name] == null) {
+            ordersPerUser[order.name] = [];
+        }
+        ordersPerUser[order.name].push(order);
+    });
+    let sortedOrders = [];
+    (() => {
+        let userOrders = Object.keys(ordersPerUser).map(((key) => {
+            return [key, ordersPerUser[key]];
+        }));
+        userOrders.sort(((a, b) => {
+            let ATotalValue = 0;
+            a[1].forEach((order) => {ATotalValue += order.price*order.quantity});
+            let BTotalValue = 0;
+            b[1].forEach((order) => {BTotalValue += order.price*order.quantity});
+            return ATotalValue - BTotalValue;
+        }));
+        sortedOrders = userOrders.reverse();
+    })();
+    let userRequests: string[] = sortedOrders.map((user) => {
+        let partString = "";
+        user[1].forEach((item, index) => {
+            partString += `${item.quantity}x ${item.item.name} ${item.item.component}: ${item.quantity*item.price}plat${index < (user[1].length - 1) ? ',' : ''} `;
+        });
+        return `/w ${user[0]} Hi! I want to buy: ${partString}(warframe.market)`;
     });
     console.log();
 }
