@@ -78,10 +78,19 @@ function getRelicDrops(): Promise<Relic[]> {
 
                 let currentRow = select(relicDom, 'following-sibling::tr[1]')[0];
                 for (let i = 0; i < 6; i++) {
-                    let itemDropDomName = currentRow.firstChild.firstChild.data.replace(/( prime)( \w+)( blueprint)*/gi, '$2').split(' ');
-                    let itemName = itemDropDomName.slice(0, -1).join(' ');
-                    let component = itemDropDomName.slice(-1)[0];
-
+                    const re = /(.*) +(prime) *(.*)/;
+                    if (currentRow.firstChild.firstChild.data.toLowerCase().indexOf('forma') != -1) {
+                        currentRow = select(currentRow, 'following-sibling::tr[1]')[0];
+                        continue;
+                    }
+                    let [,itemName,,component] = currentRow.firstChild.firstChild.data.toLowerCase().match(re);
+                    itemName = itemName.replace(/&/g, 'and');
+                    component = component.replace(' blueprint', '');
+                    if (itemName.includes('kavasa')) {
+                        if (component.includes('collar')) component = 'collar blueprint';
+                        else if (component.includes('buckle')) component = 'collar buckle';
+                        else if (component.includes('band')) component = 'collar band';
+                    }
                     let itemDropDomChance = currentRow.lastChild.firstChild.data.match(/(\w+) \((\d+).(\d+)%\)/);
                     let itemDropRarity = itemDropDomChance[1];
                     let itemChance = parseInt(itemDropDomChance[2]+itemDropDomChance[3])/10000;
@@ -108,6 +117,50 @@ function getRelicDrops(): Promise<Relic[]> {
             });
             resolve(relicList);
         }
+    });
+}
+
+function getItemPrices(item: ItemDrop) {
+    return new Promise<{avg_price: number, low: number, high: number, ducats: number, ducats_per_plat: number}>((resolve, reject) => {
+        const itemUrlName = `${item.name} prime ${item.component}`.replace(/ /g, '_');
+        let result = "";
+        let request = https.request({
+            host: 'api.warframe.market',
+            path: `/v1/items/${itemUrlName}/statistics?include=item`,
+            headers: {
+                'Language': 'end',
+                'Platform': 'pc',
+                'Content-Type': 'application/json'
+            }
+        },response => {
+            response.on('data', (data) => {
+                result += data;
+            });
+            response.on('end', () => {
+                let priceData = {avg_price: 0, low: 0, high: 0, ducats: 0, ducats_per_plat: 0};
+                let resultObj = JSON.parse(result);
+                let itemPriceData = resultObj['payload']['statistics']['48hours'];
+                priceData.ducats = resultObj['include']['item']['items_in_set'].filter((item) => item['url_name'] == itemUrlName)[0]['ducats'];
+
+                let i = 1;
+                for (let sold = 0; i <= itemPriceData.length && sold < 10; i++) {
+                    priceData.avg_price += itemPriceData[itemPriceData.length - i]['avg_price'];
+                    priceData.low += itemPriceData[itemPriceData.length - i]['min_price'];
+                    priceData.high += itemPriceData[itemPriceData.length - i]['max_price'];
+                    sold += itemPriceData[itemPriceData.length - i]['volume'];
+                }
+                priceData.avg_price /= i;
+                priceData.low /= i;
+                priceData.high /= i;
+                priceData.ducats_per_plat = priceData.ducats/priceData.avg_price;
+
+                resolve(priceData);
+            });
+        });
+        request.on('error', (err) => {
+            reject(err);
+        });
+        request.end();
     });
 }
 
