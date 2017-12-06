@@ -29,3 +29,4 @@ typings/
 *.js
 *.map
 package-lock.json
+data.json

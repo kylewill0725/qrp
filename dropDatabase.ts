@@ -47,7 +47,7 @@
 //         addItem(db, new Relic({
 //             era: 'Meso',
 //             type: 'V1',
-//             rating: 'Intact',
+//             purities: 'Intact',
 //             items: [
 //                 new Item({name: 'Foo', rarity: 'Common', chance: 0.01}),
 //                 new Item({name: 'Bar', rarity: 'Common', chance: 0.05})
@@ -72,7 +72,7 @@
 // //    Get ratingid
 //         const getRatingIdQuery = `SELECT * FROM public."RelicRatings" WHERE name = $1`;
 //         const insertRatingQuery = `INSERT INTO public."RelicRatings"(name) VALUES($1) RETURNING id`;
-//         let ratingId = insertIfNone(client, [relic.rating], getTypeIdQuery, insertTypeQuery)['id'];
+//         let ratingId = insertIfNone(client, [relic.purities], getTypeIdQuery, insertTypeQuery)['id'];
 // //    Get droptypeid
 //         const getDropTypeIdQuery = `SELECT * FROM public."RelicDropTypes" WHERE name = $1`;
 //         const insertDropTypeQuery = `INSERT INTO public."RelicDropTypes"(name) VALUES($1) RETURNING id`;

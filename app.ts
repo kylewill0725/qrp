@@ -12,6 +12,7 @@ import * as https from 'https';
 import * as index from './routes/index';
 import * as users from './routes/users';
 import {ItemDrop, Relic} from "./relic";
+import {isNullOrUndefined} from "util";
 
 var app = express();
 
@@ -48,11 +49,13 @@ app.use(function (err, req, res, next) {
     res.render('error');
 });
 
-let relics = [];
+let relics: {lastUpdated: Date, relics: Relic[]};
+let items = {};
 
-function getRelicDrops(): Promise<Relic[]> {
+function getRelicDrops(): Promise<{lastUpdated: Date, relics: Relic[]}> {
     return new Promise((resolve, reject) => {
         let content = "";
+        let lastUpdated: Date;
         https.get('https://n8k6e2y6.ssl.hwcdn.net/repos/hnfvc0o3jnfvc873njb03enrf56.html', (response) => {
             response.on('data', (d) => {
                 content += d;
@@ -60,6 +63,7 @@ function getRelicDrops(): Promise<Relic[]> {
             response.on('end', parseWarframeDropsSite);
         });
         function parseWarframeDropsSite() {
+            lastUpdated = new Date(parseInt(this.headers['etag'])*1000);
             const dom = new DOMParser().parseFromString(content);
             const relicRewardsTable = select(dom, '//h3[@id="relicRewards"]')[0].nextSibling;
             const relicDomList = select(relicRewardsTable, 'child::tr[th[contains(text(), "Intact")]]'); //Selects the table row of the relic header. The six siblings after this header are drops.
@@ -112,15 +116,15 @@ function getRelicDrops(): Promise<Relic[]> {
                     era: era,
                     type: type,
                     items: items,
-                    rating: quality
+                    purity: quality
                 }));
             });
-            resolve(relicList);
+            resolve({lastUpdated: lastUpdated, relics: relicList});
         }
     });
 }
 
-function getItemPrices(item: ItemDrop) {
+function getItemPrices(item: ItemDrop): Promise<{avg_price: number, low: number, high: number, ducats: number, ducats_per_plat: number}> {
     return new Promise<{avg_price: number, low: number, high: number, ducats: number, ducats_per_plat: number}>((resolve, reject) => {
         const itemUrlName = `${item.name} prime ${item.component}`.replace(/ /g, '_');
         let result = "";
@@ -164,15 +168,50 @@ function getItemPrices(item: ItemDrop) {
     });
 }
 
-async function main() {
-    if (fs.existsSync('data.json')) {
-
-    } else {
-        relics = await getRelicDrops();
-        console.log('done');
-    }
+function getSortedRelicDucatList() {
+    let reducedRelics = relics.relics.map((relic, i) => {
+        let val = 0;
+        relic.items.forEach(item => {
+            val += item.chance * items[item.urlName].price.ducats;
+        });
+        return {index: i, value: val};
+    });
+    let sortedReducedRelics = reducedRelics.sort((a, b) => {
+        return a.value - b.value;
+    });
+    return sortedReducedRelics.map(relic => relics[relic.index])
 }
 
+async function main() {
+    if (fs.existsSync('data.json')) {
+        let dataJson = JSON.parse(fs.readFileSync('data.json', {encoding: 'utf8'}));
+        relics = dataJson.relics;
+        items = dataJson.items;
+        console.log('done');
+    } else {
+        let relics = await getRelicDrops();
+        let pricePromises = [];
+        relics.relics.forEach((relic) => {
+            relic.items.forEach((item) => {
+                let itemUrlName = `${item.name} prime ${item.component}`.replace(/ /g, '_');
+                if (items[itemUrlName] === undefined) {
+                    pricePromises.push(getItemPrices(item).then(price => items[itemUrlName] = {
+                        lastUpdated: new Date(),
+                        price: price
+                    }).catch(reason => console.log(reason)));
+                }
+            });
+        });
+        await Promise.all(pricePromises);
+
+        await new Promise((resolve, reject) => {fs.open('data.json', 'w',(err, fd) => {
+            fs.write(fd, JSON.stringify({relics: relics, items: items}),((err2, written, str) => {}));
+            console.log('done');
+            resolve();
+        });});
+    }
+    let test = getSortedRelicDucatList();
+}
 main();
 
 module.exports = app;

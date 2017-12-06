@@ -2,14 +2,12 @@ extends layout
 
 block content
     div(class="content")
-        select
-            option(value="-1") None
-        +playerrelic
-        +playerrelic
-        +playerrelic
-        +playerrelic
+        +relic
+        +relic
+        +relic
+        +relic
 
-mixin playerrelic
+mixin relic
     div(class="pr" style="width: 100%")
         datalist
         +itemdrop(0)
