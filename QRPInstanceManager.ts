@@ -12,20 +12,23 @@ const purities = {
 };
 
 let __relics: {lastUpdated: Date, relics: Relic[]};
-export async function getRelics() {
+export function getRelics() {
     if (__relics == null) {
-        __relics = await getRelicDrops();
+        getRelicDrops().then(relics => __relics = relics);
     }
     if (__relics.lastUpdated.getTime() + (1000*60*60*24) < (new Date()).getTime()) {
-        __relics = await getRelicDrops();
+        getRelicDrops().then(relics => {
+            __relics.lastUpdated = new Date();
+            __relics = relics;
+        });
     }
     return __relics;
 }
 
 let __items = {};
-export async function getItems() {
+export function getItems() {
     if (__items == null) {
-        await getRelicDrops();
+        getRelicDrops().then(());
     }
     return __items;
 }
@@ -61,7 +64,7 @@ export async function init() {
     }
 }
 
-function getRelicDrops(): Promise<{lastUpdated: Date, relics: Relic[]}> {
+function getRelicDropTable() {
     return new Promise((resolve, reject) => {
         let content = "";
         let lastUpdated: Date;
@@ -69,8 +72,18 @@ function getRelicDrops(): Promise<{lastUpdated: Date, relics: Relic[]}> {
             response.on('data', (d) => {
                 content += d;
             });
-            response.on('end', parseWarframeDropsSite);
+            response.on('end', () => {
+                if (response.statusCode !== 200) reject(response.statusCode);
+                const dom = new DOMParser().parseFromString(content);
+
+            });
         });
+    });
+}
+
+function getRelicDrops(): Promise<{lastUpdated: Date, relics: Relic[]}> {
+    return new Promise((resolve, reject) => {
+
         function parseWarframeDropsSite() {
             lastUpdated = new Date(parseInt(this.headers['etag'])*1000);
             const dom = new DOMParser().parseFromString(content);
