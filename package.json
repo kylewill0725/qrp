@@ -14,6 +14,7 @@
     "debug": "~2.6.9",
     "express": "~4.15.5",
     "morgan": "~1.9.0",
+    "node-notifier": "^5.1.2",
     "pg": "^7.4.0",
     "pg-promise": "^7.3.2",
     "pug": "2.0.0-beta11",
@@ -21,5 +22,7 @@
     "xmldom": "^0.1.27",
     "xpath.js": "^1.0.7"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "@types/node-notifier": "0.0.28"
+  }
 }
