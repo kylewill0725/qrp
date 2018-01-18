@@ -1243,21 +1243,29 @@ async function totalOrders(cookie, token, lastKiteerDate) {
     fs.writeFileSync('output.txt', temp);
 }
 
-async function main() {
+async function main(...args) {
     // player.play('start.mp3', err => {});
     const cookie = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJqd3RfaWRlbnRpdHkiOiJRSkxUQ09SeWZDdUlwNGVQb3JZaUlyeVdDb09zZjFqMCIsImxvZ2luX3VhIjoiYidNb3ppbGxhLzUuMCAoV2luZG93cyBOVCAxMC4wOyBXaW42NDsgeDY0OyBydjo1Ny4wKSBHZWNrby8yMDEwMDEwMSBGaXJlZm94LzU3LjAnIiwiYXV0aF9tZXRob2QiOiJjb29raWUiLCJzZWN1cmUiOmZhbHNlLCJzaWQiOiI1RTNCZGw1Q2IzSFNOSlpacDUyQVJKSEtvdjF1MVhQYSIsImF1ZCI6Imp3dCIsImNzcmZfdG9rZW4iOiI5OGRjZWRlN2Y5Mjc1ZmIyZTc3MWM1YjdmOTQ1MmY2NmI5ZmUxYWQ1IiwiZXhwIjoxNTIwNDY0MzY1LCJpc3MiOiJqd3QiLCJpYXQiOjE1MTUyODAzNjUsImxvZ2luX2lwIjoiYicxOTkuMTcuNTUuMTY0JyJ9.KeUATSWUoIeGwG13OH-yeGzg1bh4BVKFWWVfQc_MURk';
     let csrftoken = await getToken(cookie);
-    await lookupOrders();
-    player.play('input.mp3', err => {});
-    console.log("Waiting for user input:");
-    await new Promise((resolve) => {
-        const stdin = process.openStdin();
-        stdin.addListener('data', d => {resolve()});
-        stdin.addListener('end', () => {});
-    });
-    console.log("Got user input.");
-    await logBuys(cookie, csrftoken);
-    // await totalOrders(cookie, csrftoken, new Date(2018, 0, 12, 0, 0, 0, 0));
+    if (process.argv.includes("lookup")) {
+        await lookupOrders();
+    }
+    if (process.argv.includes("input")) {
+        player.play('input.mp3', err => {});
+        console.log("Waiting for user input:");
+        await new Promise((resolve) => {
+            const stdin = process.openStdin();
+            stdin.addListener('data', d => {resolve()});
+            stdin.addListener('end', () => {});
+        });
+        console.log("Got user input.");
+    }
+    if (process.argv.includes("log")) {
+        await logBuys(cookie, csrftoken);
+    }
+    if (process.argv.includes("total")) {
+        await totalOrders(cookie, csrftoken, new Date(2018, 0, 12, 0, 0, 0, 0));
+    }
     console.log("Done");
     // player.play('done.mp3', err => {});
 }
