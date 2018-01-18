@@ -3,7 +3,7 @@ import {DOMParser} from "xmldom";
 import * as select from 'xpath.js';
 import * as https from 'https';
 import * as fs from "fs";
-import * as notifier from "node-notifier";
+import * as ps from 'play-sound';
 import {setTimeout} from "timers";
 
 const purities = {
@@ -15,6 +15,8 @@ const purities = {
 
 let relics: { lastUpdated: Date, relics: Relic[] };
 let items: Map<string, Item>;
+
+const player = ps();
 
 const snooze = ms => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -220,8 +222,9 @@ async function rateLimitedFunctionCalls(objectMap: Map<any, any>, mainFunction: 
 
         objectArrayBunches.push(result);
     }
+    // let proms = [];
+    let proms = [];
     for (let key in objectArrayBunches) {
-        let proms = [];
         for (let item of objectArrayBunches[key]) {
             if (item != null) {
                 proms.push(
@@ -232,14 +235,15 @@ async function rateLimitedFunctionCalls(objectMap: Map<any, any>, mainFunction: 
             }
         }
         console.log(`${Number(key) + 1}/${objectArrayBunches.length}`);
-        await Promise.all(proms);
+        await snooze(2650);
     }
+    await Promise.all(proms);
+    // await Promise.all(proms);
 }
 
 let targets: any[];
 
 async function lookupOrders() {
-    notifier.notify({title: 'Starting', message: ''});
     items = new Map<string, Item>();
     if (fs.existsSync('data.json')) {
         let dataJson = JSON.parse(/*fs.readFileSync('data.json', {encoding: 'utf8'})*/`
@@ -283,9 +287,11 @@ async function lookupOrders() {
         // await rateLimitedFunctionCalls(targetMap, 5, getOrdersFromTarget, (key, order) => {
         //     orders = orders.concat(order);
         // });
+        let startTime = new Date().getTime()/1000;
         await rateLimitedFunctionCalls(items, getOrders, (key, order) => {
             orders = orders.concat(order);
         });
+        console.log("Finished: " + ((new Date().getTime()/1000) - startTime));
     } else {
 //         orders = JSON.parse(`[
 //   {
@@ -1005,7 +1011,7 @@ async function lookupOrders() {
         if (ducatsPerUser[order.name] == null) {
             ducatsPerUser[order.name] = 0;
         }
-        ducatsPerUser[order.name] += order.quantity * order.item.prices.ducats;
+        ducatsPerUser[order.name] += order.quantity * itemIds()[order.item.urlName].ducats;
         platPerUser[order.name] += order.quantity * order.price;
         ordersPerUser[order.name].push(order);
     });
@@ -1045,7 +1051,6 @@ async function lookupOrders() {
     let temp = userRequests.join('\n');
     fs.writeFileSync('./output.txt', temp);
     console.log('Success');
-    notifier.notify({title: 'Orders Loaded'});
 }
 
 function getToken(cookie) {
@@ -1085,7 +1090,7 @@ async function logBuys(cookie, csrftoken) {
     let lines = data.split('\n');
     let trades = [];
     for (let l of lines) {
-        if (l.charAt(0) === '$') {
+        if (l.charAt(0) === '$' || l.charAt(0) === ';') {
             trades.push(l.substring(1, l.length).split(' '));
         }
     }
@@ -1170,6 +1175,7 @@ async function logBuys(cookie, csrftoken) {
     }, (key, res) => {
 
     });
+    fs.writeFileSync('output.txt', 'Success');
 }
 
 async function totalOrders(cookie, token, lastKiteerDate) {
@@ -1192,7 +1198,7 @@ async function totalOrders(cookie, token, lastKiteerDate) {
                 let resultData = JSON.parse(result);
                 let filteredOrders = resultData['payload']['closed_orders'].filter(order => {
                     let orderDate = new Date(order.closed_date);
-                    return orderDate > lastKiteerDate;
+                    return orderDate > lastKiteerDate && order.order_type === "buy";
                 });
                 let sortedOrders = filteredOrders.sort((a,b) => {
                     if (a.item.url_name < b.item.url_name)
@@ -1209,42 +1215,51 @@ async function totalOrders(cookie, token, lastKiteerDate) {
         request.on('error', err => console.log(err));
         request.end();
     }));
-    let totals = new Map<string, number>();
+    let totals = new Map<string, {quantity: number, prices: number[]}>();
     let totalPlatinum = 0;
     let totalDucats = 0;
     closedOrders.forEach(order => {
         let prevTotal = totals.get(order.urlName);
+        let val: {quantity: number, prices: number[]}
         if (prevTotal == null) {
-            totals.set(order.urlName, order.quantity);
+            val = {quantity: order.quantity, prices: [order.platinum]};
+            totals.set(order.urlName, val);
         } else {
-            totals.set(order.urlName, prevTotal + order.quantity);
+            val = totals.get(order.urlName);
+            let p = val.prices;
+            p.push(order.platinum);
+            totals.set(order.urlName, {quantity: val.quantity + order.quantity, prices: p});
         }
         totalPlatinum += order.platinum * order.quantity;
-        if (itemIds()[order.urlName] != null)
+        if (itemIds()[order.urlName] != null && itemIds()[order.urlName].ducats != null)
             totalDucats += itemIds()[order.urlName].ducats * order.quantity;
     });
     let temp = "";
     totals.forEach((value, key) => {
-        temp += (`${value}x ${key}\n`);
+        temp += (`${value.quantity}x ${key} `);
+        temp += value.prices.join(' ') + '\n';
     });
     temp += `Total Platinum: ${totalPlatinum}\nTotal Ducats: ${totalDucats}\nAverage Ducats/Platinum: ${totalDucats/totalPlatinum}`;
     fs.writeFileSync('output.txt', temp);
 }
 
 async function main() {
-    const cookie = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE1MTUxMTk4MDAsImlzcyI6Imp3dCIsInNpZCI6InJFR1dIQnJrRlJoQ0tqQlRNY2VudlhIS1dZVWVNSG9qIiwiY3NyZl90b2tlbiI6ImU2NTQyNDg2Zjc1ZjUzNTc1OWM4NDJmMGRkM2UyYjI3MzgwNWFiODYiLCJsb2dpbl9pcCI6ImInMjQuMTgxLjE1My4yMjYnIiwiYXVkIjoiand0IiwibG9naW5fdWEiOiJiJ01vemlsbGEvNS4wIChXaW5kb3dzIE5UIDEwLjA7IFdpbjY0OyB4NjQ7IHJ2OjU3LjApIEdlY2tvLzIwMTAwMTAxIEZpcmVmb3gvNTcuMCciLCJhdXRoX21ldGhvZCI6ImNvb2tpZSIsImV4cCI6MTUyMDMwMzgwMCwic2VjdXJlIjp0cnVlLCJqd3RfaWRlbnRpdHkiOiJEdWxzNXJXOEN5ZXhvYkZvOFFNY1hucE1FM3FaTnhtQSJ9.YWhloe6C2WudjUoBQQvHvAQ_gSY7KHiV_th5kWHezWo';
+    // player.play('start.mp3', err => {});
+    const cookie = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJqd3RfaWRlbnRpdHkiOiJRSkxUQ09SeWZDdUlwNGVQb3JZaUlyeVdDb09zZjFqMCIsImxvZ2luX3VhIjoiYidNb3ppbGxhLzUuMCAoV2luZG93cyBOVCAxMC4wOyBXaW42NDsgeDY0OyBydjo1Ny4wKSBHZWNrby8yMDEwMDEwMSBGaXJlZm94LzU3LjAnIiwiYXV0aF9tZXRob2QiOiJjb29raWUiLCJzZWN1cmUiOmZhbHNlLCJzaWQiOiI1RTNCZGw1Q2IzSFNOSlpacDUyQVJKSEtvdjF1MVhQYSIsImF1ZCI6Imp3dCIsImNzcmZfdG9rZW4iOiI5OGRjZWRlN2Y5Mjc1ZmIyZTc3MWM1YjdmOTQ1MmY2NmI5ZmUxYWQ1IiwiZXhwIjoxNTIwNDY0MzY1LCJpc3MiOiJqd3QiLCJpYXQiOjE1MTUyODAzNjUsImxvZ2luX2lwIjoiYicxOTkuMTcuNTUuMTY0JyJ9.KeUATSWUoIeGwG13OH-yeGzg1bh4BVKFWWVfQc_MURk';
     let csrftoken = await getToken(cookie);
     await lookupOrders();
-    // console.log("Waiting for user input:");
-    // await new Promise((resolve) => {
-    //     const stdin = process.openStdin();
-    //     stdin.addListener('data', d => {resolve()});
-    //     stdin.addListener('end', () => {});
-    // });
-    // console.log("Got user input.");
-    // await logBuys(cookie, csrftoken);
-    // await totalOrders(cookie, csrftoken, new Date(2017, 11, 30, 0, 0, 0, 0));
+    player.play('input.mp3', err => {});
+    console.log("Waiting for user input:");
+    await new Promise((resolve) => {
+        const stdin = process.openStdin();
+        stdin.addListener('data', d => {resolve()});
+        stdin.addListener('end', () => {});
+    });
+    console.log("Got user input.");
+    await logBuys(cookie, csrftoken);
+    // await totalOrders(cookie, csrftoken, new Date(2018, 0, 12, 0, 0, 0, 0));
     console.log("Done");
+    // player.play('done.mp3', err => {});
 }
 
 main();
@@ -1255,16 +1270,103 @@ function orderListToString(orders): string {
         let partlist = "";
         let totalplat = 0;
         let totalducats = 0;
-        user[1].forEach((item, index) => {
-            if (item.price == 0 && item.quantity > 5) {
-                partlist += `\n/w ${user[0]} Hi! just wanted to check to see if you meant to sell ${item.quantity}x ${item.item.name} ${item.item.name} for ${item.price} a piece. I do believe that you accidentally swapped the quantity and price fields though.`;
-            } else {
-                totalplat += item.quantity * item.price;
-                totalducats += item.quantity * item.item.prices.ducats;
-                partlist += `\n${item.item.urlName} ${item.price} ${item.quantity} (${item.item.prices.ducats / item.price})`;
-                partString += `${item.quantity}x ${item.item.name} ${item.item.component}: ${item.quantity * item.price}plat${index < (user[1].length - 1) ? ',' : ''} `;
+        let sortedOrders = user[1].sort((a, b) => { //Sort greatest ducats per plat to least
+            if (a.quantity < b.quantity) {
+                return 1;
+            } else if (a.quantity > b.quantity) {
+                return -1;
             }
+            return 0;
         });
-        return `/w ${user[0]} Hi! I want to buy: ${partString}(warframe.market)\nTotal plat: ${totalplat} Total ducats: ${totalducats} (${totalducats / totalplat})${partlist}`;
+        let groups: {group: {index: number, quantity: number}[], plat: number, ducats: number, quantity: number}[] = [];
+        let ordersAccountedFor = user[1].map(v => 0);
+        for (let i = 0; i < sortedOrders.length; i++) {
+            let currentOrder = sortedOrders[i];
+            let currentOrderCount = currentOrder.quantity - ordersAccountedFor[i];
+            if (currentOrderCount > 0) {
+                let totalOrderCount = currentOrderCount;
+                let totalPlatCount = currentOrderCount * currentOrder.price;
+                let totalDucatCount = currentOrderCount * itemIds()[currentOrder.item.urlName].ducats;
+                let group: { index: number, quantity: number }[] = [{index: i, quantity: currentOrderCount}];
+
+                for (let j = i + 1; j < sortedOrders.length && totalOrderCount < 5; j++) {
+                    let nextOrder = sortedOrders[j];
+                    let nextOrderCount = nextOrder.quantity - ordersAccountedFor[j];
+                    if (nextOrderCount > 0 && totalOrderCount + nextOrderCount <= 5) {
+                        totalOrderCount += nextOrderCount;
+                        totalPlatCount += nextOrderCount * nextOrder.price;
+                        totalDucatCount += nextOrderCount * itemIds()[nextOrder.item.urlName].ducats;
+                        group.push({
+                            index: j,
+                            quantity: nextOrderCount
+                        });
+                    }
+                }
+
+                if (totalOrderCount == 5) {
+                    group.forEach(v => ordersAccountedFor[v.index] = v.quantity);
+                    groups.push({
+                        group: group,
+                        plat: totalPlatCount,
+                        ducats: totalDucatCount,
+                        quantity: totalOrderCount
+                    });
+                }
+            }
+        }
+        for (let i = 0; i < sortedOrders.length; i++) {
+            let currentOrder = sortedOrders[i];
+            let currentOrderCount = currentOrder.quantity - ordersAccountedFor[i];
+            if (currentOrderCount > 0) {
+                let totalOrderCount = currentOrderCount;
+                let totalPlatCount = currentOrderCount * currentOrder.price;
+                let totalDucatCount = currentOrderCount * itemIds()[currentOrder.item.urlName].ducats;
+                let group: { index: number, quantity: number }[] = [{index: i, quantity: currentOrderCount}];
+
+                for (let j = i + 1; j < sortedOrders.length && totalOrderCount < 5; j++) {
+                    let nextOrder = sortedOrders[j];
+                    let nextOrderCount = nextOrder.quantity - ordersAccountedFor[j];
+                    if (nextOrderCount > 0) {
+                        let addedCount = 0;
+                        if (nextOrderCount > 5 - totalOrderCount) {
+                            addedCount = 5 - totalOrderCount;
+                        } else {
+                            addedCount = nextOrderCount;
+                        }
+                        totalOrderCount += addedCount;
+                        totalPlatCount += addedCount * nextOrder.price;
+                        totalDucatCount += addedCount * itemIds()[nextOrder.item.urlName].ducats;
+                        group.push({
+                            index: j,
+                            quantity: addedCount
+                        });
+                    }
+                }
+
+                group.forEach(v => ordersAccountedFor[v.index] = v.quantity);
+                groups.push({
+                    group: group,
+                    plat: totalPlatCount,
+                    ducats: totalDucatCount,
+                    quantity: totalOrderCount
+                });
+            }
+        }
+        let sortedGroups = groups.sort(((a, b) => {
+            if (a.ducats < b.ducats) {
+                return 1;
+            } else if (a.ducats > b.ducats) {
+                return -1;
+            }
+            return 0;
+        }));
+        let outputString = `/w ${user[0]} Hi! I want to buy: `;
+        outputString += sortedGroups.map(group =>  group.group.map(order => `${order.quantity}x ${sortedOrders[order.index].item.name} ${sortedOrders[order.index].item.component}: ${order.quantity * sortedOrders[order.index].price}:platinum:`).join(', ')).join('\nand ');
+        user[1].forEach((item, index) => {
+            totalplat += item.quantity * item.price;
+            totalducats += item.quantity * itemIds()[item.item.urlName].ducats;
+            partlist += `\n${item.item.urlName} ${item.price} ${item.quantity} (${itemIds()[item.item.urlName].ducats / item.price})`;
+        });
+        return `${outputString}(warframe.market)\nTotal plat: ${totalplat} Total ducats: ${totalducats} (${totalducats / totalplat})${partlist}`;
     }).join('\n');
 }

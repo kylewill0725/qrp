@@ -141,8 +141,8 @@ let item_ids = JSON.parse(`{
     "ducats": 15
   },
   "akbolto_prime_receiver": {
-    "id": "5a311f83c2c9e90dfff475d4"
-  },
+    "id": "5a311f83c2c9e90dfff475d4",
+    "ducats": 100  },
   "cernos_prime_string": {
     "id": "583580fd2c2ada003badef89",
     "ducats": 45
@@ -160,8 +160,8 @@ let item_ids = JSON.parse(`{
     "ducats": 65
   },
   "kogake_prime_boot": {
-    "id": "5a311f84c2c9e90dfff475e4"
-  },
+    "id": "5a311f84c2c9e90dfff475e4",
+    "ducats": 15  },
   "helios_prime_carapace": {
     "id": "58b57068eb26db5c31192116",
     "ducats": 15
@@ -471,8 +471,8 @@ let item_ids = JSON.parse(`{
     "ducats": 100
   },
   "kogake_prime_blueprint": {
-    "id": "5a311f84c2c9e90dfff475e5"
-  },
+    "id": "5a311f84c2c9e90dfff475e5",
+    "ducats": 45  },
   "vectis_prime_blueprint": {
     "id": "559daae8e779897b56bee133",
     "ducats": 45
@@ -558,8 +558,8 @@ let item_ids = JSON.parse(`{
     "ducats": 65
   },
   "akbolto_prime_barrel": {
-    "id": "5a311f85c2c9e90dfff475f7"
-  },
+    "id": "5a311f85c2c9e90dfff475f7",
+    "ducats": 45  },
   "scindo_prime_blueprint": {
     "id": "54a73e65e779893a797fff5c",
     "ducats": 45
@@ -693,11 +693,11 @@ let item_ids = JSON.parse(`{
     "ducats": 45
   },
   "akbolto_prime_link": {
-    "id": "5a311f84c2c9e90dfff475f3"
-  },
+    "id": "5a311f84c2c9e90dfff475f3",
+    "ducats": 45  },
   "mirage_prime_chassis": {
-    "id": "5a2feeb2c2c9e90cbdaa23d5"
-  },
+    "id": "5a2feeb2c2c9e90cbdaa23d5",
+    "ducats": 15  },
   "burston_prime_blueprint": {
     "id": "54a73e65e779893a797fff3a",
     "ducats": 15
@@ -759,8 +759,8 @@ let item_ids = JSON.parse(`{
     "ducats": 15
   },
   "mirage_prime_neuroptics": {
-    "id": "5a2feeb2c2c9e90cbdaa23d6"
-  },
+    "id": "5a2feeb2c2c9e90cbdaa23d6",
+    "ducats": 15  },
   "oberon_prime_blueprint": {
     "id": "592dd262011e88f094afec7d",
     "ducats": 45
@@ -782,8 +782,8 @@ let item_ids = JSON.parse(`{
     "ducats": 15
   },
   "kogake_prime_gauntlet": {
-    "id": "5a311f85c2c9e90dfff475f6"
-  },
+    "id": "5a311f85c2c9e90dfff475f6",
+    "ducats": 100  },
   "boltor_prime_barrel": {
     "id": "54a73e65e779893a797fff2e",
     "ducats": 15
@@ -869,8 +869,8 @@ let item_ids = JSON.parse(`{
     "ducats": 100
   },
   "mirage_prime_blueprint": {
-    "id": "5a2feeb2c2c9e90cbdaa23d4"
-  },
+    "id": "5a2feeb2c2c9e90cbdaa23d4",
+    "ducats": 100  },
   "sybaris_prime_receiver": {
     "id": "592dd262011e88f094afec84",
     "ducats": 45
@@ -884,7 +884,8 @@ let item_ids = JSON.parse(`{
     "ducats": 45
   },
   "akbolto_prime_blueprint": {
-    "id": "5a311f83c2c9e90dfff475d5"
+    "id": "5a311f83c2c9e90dfff475d5",
+    "ducats": 15
   },
   "nyx_prime_systems": {
     "id": "54a73e65e779893a797fff76",
@@ -931,7 +932,8 @@ let item_ids = JSON.parse(`{
     "ducats": 45
   },
   "mirage_prime_systems": {
-    "id": "5a2feeb1c2c9e90cbdaa23d2"
+    "id": "5a2feeb1c2c9e90cbdaa23d2",
+    "ducats": 45
   },
   "silva_and_aegis_prime_hilt": {
     "id": "592dd262011e88f094afec89",
