@@ -1001,6 +1001,7 @@ async function lookupOrders() {
     let ordersPerUser = {};
     let ducatsPerUser = {};
     let platPerUser = {};
+    console.log("Collecting orders");
     orders.forEach((order) => {
         if (ordersPerUser[order.name] == null) {
             ordersPerUser[order.name] = [];
@@ -1015,6 +1016,7 @@ async function lookupOrders() {
         platPerUser[order.name] += order.quantity * order.price;
         ordersPerUser[order.name].push(order);
     });
+    console.log("Seperating classes");
     let seperatedOrders = [
         {},
         {}
@@ -1026,6 +1028,7 @@ async function lookupOrders() {
             seperatedOrders[1][key] = ordersPerUser[key];
         }
     }));
+    console.log("Assigning class statuses");
     let userRequests: string[] = [];
     seperatedOrders.forEach(aordersPerUser => {
         let sortedOrders = [];
@@ -1264,7 +1267,7 @@ async function main(...args) {
         await logBuys(cookie, csrftoken);
     }
     if (process.argv.includes("total")) {
-        await totalOrders(cookie, csrftoken, new Date(2018, 0, 12, 0, 0, 0, 0));
+        await totalOrders(cookie, csrftoken, new Date(2018, 0, 17, 0, 0, 0, 0));
     }
     console.log("Done");
     // player.play('done.mp3', err => {});
@@ -1291,6 +1294,9 @@ function orderListToString(orders): string {
         for (let i = 0; i < sortedOrders.length; i++) {
             let currentOrder = sortedOrders[i];
             let currentOrderCount = currentOrder.quantity - ordersAccountedFor[i];
+            if (currentOrderCount > 5) {
+                currentOrderCount = 5;
+            }
             if (currentOrderCount > 0) {
                 let totalOrderCount = currentOrderCount;
                 let totalPlatCount = currentOrderCount * currentOrder.price;
