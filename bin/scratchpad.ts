@@ -1270,6 +1270,7 @@ async function main(...args) {
         await totalOrders(cookie, csrftoken, new Date(2018, 0, 17, 0, 0, 0, 0));
     }
     console.log("Done");
+    process.exit(0);
     // player.play('done.mp3', err => {});
 }
 
