@@ -5,6 +5,7 @@ import * as https from 'https';
 import * as fs from "fs";
 import * as ps from 'play-sound';
 import {setTimeout} from "timers";
+import {Order, OrderCollection, OrderItem} from "../order";
 
 const purities = {
     'intact': [0.2533, 0.11, 0.02],
@@ -238,7 +239,6 @@ async function rateLimitedFunctionCalls(objectMap: Map<any, any>, mainFunction: 
         await snooze(2650);
     }
     await Promise.all(proms);
-    // await Promise.all(proms);
 }
 
 let targets: any[];
@@ -275,7 +275,7 @@ async function lookupOrders() {
         // });
     }
     const producation = true;
-    let orders = [];
+    let orderCollectionByUser: Map<string, OrderCollection> = new Map<string, OrderCollection>();
     if (producation) {
         // targets = getSortedRelicDucatPerPlat().reverse().filter(value => value.value > 10);
         // function getOrdersFromTarget(target: {name: string, value: number}): Promise<{quantity: number, price: number, name: string}[]> {
@@ -288,768 +288,42 @@ async function lookupOrders() {
         //     orders = orders.concat(order);
         // });
         let startTime = new Date().getTime()/1000;
-        await rateLimitedFunctionCalls(items, getOrders, (key, order) => {
-            orders = orders.concat(order);
+        await rateLimitedFunctionCalls(items, getOrders, (key, orders) => {
+            for (let order of orders) {
+                let orderCollection = orderCollectionByUser.get(order.name);
+                if (orderCollection == null) {
+                    orderCollection = new OrderCollection();
+                    orderCollectionByUser.set(order.name, orderCollection);
+                }
+                orderCollection.add(new Order(
+                    order.name,
+                    new OrderItem(order.item.urlName, order.price, order.item.prices.ducats),
+                    order.quantity
+                ));
+            }
         });
         console.log("Finished: " + ((new Date().getTime()/1000) - startTime));
-    } else {
-//         orders = JSON.parse(`[
-//   {
-//     "item": {
-//       "__type": "Item",
-//       "name": "cernos",
-//       "component": "string",
-//       "lastUpdated": "2017-12-26T00:42:54.538Z",
-//       "prices": {
-//         "avg_price": 3.357142857142857,
-//         "low": 3.2857142857142856,
-//         "high": 3.4285714285714284,
-//         "ducats": 45,
-//         "ducats_per_plat": 13.404255319148936
-//       }
-//     },
-//     "quantity": 1,
-//     "price": 3,
-//     "name": "rugged53"
-//   },
-//   {
-//     "item": {
-//       "__type": "Item",
-//       "name": "helios",
-//       "component": "systems",
-//       "lastUpdated": "2017-12-26T00:43:04.417Z",
-//       "prices": {
-//         "avg_price": 3.6666666666666665,
-//         "low": 3.5,
-//         "high": 3.8333333333333335,
-//         "ducats": 45,
-//         "ducats_per_plat": 12.272727272727273
-//       }
-//     },
-//     "quantity": 2,
-//     "price": 3,
-//     "name": "deadjon1237"
-//   },
-//   {
-//     "item": {
-//       "__type": "Item",
-//       "name": "venka",
-//       "component": "blueprint",
-//       "lastUpdated": "2017-12-26T00:43:08.446Z",
-//       "prices": {
-//         "avg_price": 2.5714285714285716,
-//         "low": 2.4285714285714284,
-//         "high": 2.7142857142857144,
-//         "ducats": 45,
-//         "ducats_per_plat": 17.5
-//       }
-//     },
-//     "quantity": 4,
-//     "price": 3,
-//     "name": "Laederlappen"
-//   },
-//   {
-//     "item": {
-//       "__type": "Item",
-//       "name": "venka",
-//       "component": "blueprint",
-//       "lastUpdated": "2017-12-26T00:43:08.446Z",
-//       "prices": {
-//         "avg_price": 2.5714285714285716,
-//         "low": 2.4285714285714284,
-//         "high": 2.7142857142857144,
-//         "ducats": 45,
-//         "ducats_per_plat": 17.5
-//       }
-//     },
-//     "quantity": 1,
-//     "price": 3,
-//     "name": "rugged53"
-//   },
-//   {
-//     "item": {
-//       "__type": "Item",
-//       "name": "venka",
-//       "component": "blueprint",
-//       "lastUpdated": "2017-12-26T00:43:08.446Z",
-//       "prices": {
-//         "avg_price": 2.5714285714285716,
-//         "low": 2.4285714285714284,
-//         "high": 2.7142857142857144,
-//         "ducats": 45,
-//         "ducats_per_plat": 17.5
-//       }
-//     },
-//     "quantity": 1,
-//     "price": 3,
-//     "name": "NeonZeas"
-//   },
-//   {
-//     "item": {
-//       "__type": "Item",
-//       "name": "nami skyla",
-//       "component": "handle",
-//       "lastUpdated": "2017-12-26T00:43:13.166Z",
-//       "prices": {
-//         "avg_price": 4.375,
-//         "low": 3,
-//         "high": 5.75,
-//         "ducats": 45,
-//         "ducats_per_plat": 10.285714285714286
-//       }
-//     },
-//     "quantity": 1,
-//     "price": 3,
-//     "name": "B4tm4nD4rkKnight"
-//   },
-//   {
-//     "item": {
-//       "__type": "Item",
-//       "name": "nami skyla",
-//       "component": "handle",
-//       "lastUpdated": "2017-12-26T00:43:13.166Z",
-//       "prices": {
-//         "avg_price": 4.375,
-//         "low": 3,
-//         "high": 5.75,
-//         "ducats": 45,
-//         "ducats_per_plat": 10.285714285714286
-//       }
-//     },
-//     "quantity": 1,
-//     "price": 3,
-//     "name": "LareTheHunter"
-//   },
-//   {
-//     "item": {
-//       "__type": "Item",
-//       "name": "galatine",
-//       "component": "handle",
-//       "lastUpdated": "2017-12-26T00:43:11.826Z",
-//       "prices": {
-//         "avg_price": 3.375,
-//         "low": 3,
-//         "high": 3.75,
-//         "ducats": 45,
-//         "ducats_per_plat": 13.333333333333334
-//       }
-//     },
-//     "quantity": 2,
-//     "price": 3,
-//     "name": "Bereniso"
-//   },
-//   {
-//     "item": {
-//       "__type": "Item",
-//       "name": "oberon",
-//       "component": "blueprint",
-//       "lastUpdated": "2017-12-26T00:43:10.267Z",
-//       "prices": {
-//         "avg_price": 3.5,
-//         "low": 3.3333333333333335,
-//         "high": 3.6666666666666665,
-//         "ducats": 45,
-//         "ducats_per_plat": 12.857142857142858
-//       }
-//     },
-//     "quantity": 1,
-//     "price": 3,
-//     "name": "Dernasur"
-//   },
-//   {
-//     "item": {
-//       "__type": "Item",
-//       "name": "oberon",
-//       "component": "blueprint",
-//       "lastUpdated": "2017-12-26T00:43:10.267Z",
-//       "prices": {
-//         "avg_price": 3.5,
-//         "low": 3.3333333333333335,
-//         "high": 3.6666666666666665,
-//         "ducats": 45,
-//         "ducats_per_plat": 12.857142857142858
-//       }
-//     },
-//     "quantity": 1,
-//     "price": 3,
-//     "name": "Ashen_shadow"
-//   },
-//   {
-//     "item": {
-//       "__type": "Item",
-//       "name": "euphona",
-//       "component": "barrel",
-//       "lastUpdated": "2017-12-26T00:43:05.692Z",
-//       "prices": {
-//         "avg_price": 3.1666666666666665,
-//         "low": 3.111111111111111,
-//         "high": 3.2222222222222223,
-//         "ducats": 45,
-//         "ducats_per_plat": 14.210526315789474
-//       }
-//     },
-//     "quantity": 2,
-//     "price": 3,
-//     "name": "Iconn2"
-//   },
-//   {
-//     "item": {
-//       "__type": "Item",
-//       "name": "euphona",
-//       "component": "barrel",
-//       "lastUpdated": "2017-12-26T00:43:05.692Z",
-//       "prices": {
-//         "avg_price": 3.1666666666666665,
-//         "low": 3.111111111111111,
-//         "high": 3.2222222222222223,
-//         "ducats": 45,
-//         "ducats_per_plat": 14.210526315789474
-//       }
-//     },
-//     "quantity": 1,
-//     "price": 3,
-//     "name": "holoziom123"
-//   },
-//   {
-//     "item": {
-//       "__type": "Item",
-//       "name": "euphona",
-//       "component": "barrel",
-//       "lastUpdated": "2017-12-26T00:43:05.692Z",
-//       "prices": {
-//         "avg_price": 3.1666666666666665,
-//         "low": 3.111111111111111,
-//         "high": 3.2222222222222223,
-//         "ducats": 45,
-//         "ducats_per_plat": 14.210526315789474
-//       }
-//     },
-//     "quantity": 1,
-//     "price": 3,
-//     "name": "Sylvantis"
-//   },
-//   {
-//     "item": {
-//       "__type": "Item",
-//       "name": "kavasa",
-//       "component": "collar blueprint",
-//       "lastUpdated": "2017-12-26T00:43:05.657Z",
-//       "prices": {
-//         "avg_price": 3.75,
-//         "low": 3.75,
-//         "high": 3.75,
-//         "ducats": 45,
-//         "ducats_per_plat": 12
-//       }
-//     },
-//     "quantity": 1,
-//     "price": 3,
-//     "name": "ktoto101010"
-//   },
-//   {
-//     "item": {
-//       "__type": "Item",
-//       "name": "tigris",
-//       "component": "receiver",
-//       "lastUpdated": "2017-12-26T00:43:09.891Z",
-//       "prices": {
-//         "avg_price": 3.8,
-//         "low": 3.4,
-//         "high": 4.2,
-//         "ducats": 45,
-//         "ducats_per_plat": 11.842105263157896
-//       }
-//     },
-//     "quantity": 1,
-//     "price": 3,
-//     "name": "Eyleus"
-//   },
-//   {
-//     "item": {
-//       "__type": "Item",
-//       "name": "paris",
-//       "component": "grip",
-//       "lastUpdated": "2017-12-26T00:43:09.075Z",
-//       "prices": {
-//         "avg_price": 3.4,
-//         "low": 3.4,
-//         "high": 3.4,
-//         "ducats": 45,
-//         "ducats_per_plat": 13.23529411764706
-//       }
-//     },
-//     "quantity": 1,
-//     "price": 3,
-//     "name": "supereece"
-//   },
-//   {
-//     "item": {
-//       "__type": "Item",
-//       "name": "paris",
-//       "component": "grip",
-//       "lastUpdated": "2017-12-26T00:43:09.075Z",
-//       "prices": {
-//         "avg_price": 3.4,
-//         "low": 3.4,
-//         "high": 3.4,
-//         "ducats": 45,
-//         "ducats_per_plat": 13.23529411764706
-//       }
-//     },
-//     "quantity": 1,
-//     "price": 3,
-//     "name": "Wolfpatronus"
-//   },
-//   {
-//     "item": {
-//       "__type": "Item",
-//       "name": "akbronco",
-//       "component": "link",
-//       "lastUpdated": "2017-12-26T00:43:11.287Z",
-//       "prices": {
-//         "avg_price": 2.75,
-//         "low": 2.25,
-//         "high": 3.25,
-//         "ducats": 45,
-//         "ducats_per_plat": 16.363636363636363
-//       }
-//     },
-//     "quantity": 3,
-//     "price": 3,
-//     "name": "Laederlappen"
-//   },
-//   {
-//     "item": {
-//       "__type": "Item",
-//       "name": "akbronco",
-//       "component": "link",
-//       "lastUpdated": "2017-12-26T00:43:11.287Z",
-//       "prices": {
-//         "avg_price": 2.75,
-//         "low": 2.25,
-//         "high": 3.25,
-//         "ducats": 45,
-//         "ducats_per_plat": 16.363636363636363
-//       }
-//     },
-//     "quantity": 1,
-//     "price": 3,
-//     "name": "D3r3zz3d"
-//   },
-//   {
-//     "item": {
-//       "__type": "Item",
-//       "name": "akbronco",
-//       "component": "link",
-//       "lastUpdated": "2017-12-26T00:43:11.287Z",
-//       "prices": {
-//         "avg_price": 2.75,
-//         "low": 2.25,
-//         "high": 3.25,
-//         "ducats": 45,
-//         "ducats_per_plat": 16.363636363636363
-//       }
-//     },
-//     "quantity": 1,
-//     "price": 3,
-//     "name": "supereece"
-//   },
-//   {
-//     "item": {
-//       "__type": "Item",
-//       "name": "akbronco",
-//       "component": "link",
-//       "lastUpdated": "2017-12-26T00:43:11.287Z",
-//       "prices": {
-//         "avg_price": 2.75,
-//         "low": 2.25,
-//         "high": 3.25,
-//         "ducats": 45,
-//         "ducats_per_plat": 16.363636363636363
-//       }
-//     },
-//     "quantity": 1,
-//     "price": 3,
-//     "name": "iF1GHTx"
-//   },
-//   {
-//     "item": {
-//       "__type": "Item",
-//       "name": "akbronco",
-//       "component": "link",
-//       "lastUpdated": "2017-12-26T00:43:11.287Z",
-//       "prices": {
-//         "avg_price": 2.75,
-//         "low": 2.25,
-//         "high": 3.25,
-//         "ducats": 45,
-//         "ducats_per_plat": 16.363636363636363
-//       }
-//     },
-//     "quantity": 1,
-//     "price": 3,
-//     "name": "expendid"
-//   },
-//   {
-//     "item": {
-//       "__type": "Item",
-//       "name": "akbronco",
-//       "component": "link",
-//       "lastUpdated": "2017-12-26T00:43:11.287Z",
-//       "prices": {
-//         "avg_price": 2.75,
-//         "low": 2.25,
-//         "high": 3.25,
-//         "ducats": 45,
-//         "ducats_per_plat": 16.363636363636363
-//       }
-//     },
-//     "quantity": 1,
-//     "price": 3,
-//     "name": "YureiBlossom"
-//   },
-//   {
-//     "item": {
-//       "__type": "Item",
-//       "name": "akbronco",
-//       "component": "link",
-//       "lastUpdated": "2017-12-26T00:43:11.287Z",
-//       "prices": {
-//         "avg_price": 2.75,
-//         "low": 2.25,
-//         "high": 3.25,
-//         "ducats": 45,
-//         "ducats_per_plat": 16.363636363636363
-//       }
-//     },
-//     "quantity": 1,
-//     "price": 3,
-//     "name": "Kenpachi25"
-//   },
-//   {
-//     "item": {
-//       "__type": "Item",
-//       "name": "akbronco",
-//       "component": "link",
-//       "lastUpdated": "2017-12-26T00:43:11.287Z",
-//       "prices": {
-//         "avg_price": 2.75,
-//         "low": 2.25,
-//         "high": 3.25,
-//         "ducats": 45,
-//         "ducats_per_plat": 16.363636363636363
-//       }
-//     },
-//     "quantity": 1,
-//     "price": 2,
-//     "name": "Eyleus"
-//   },
-//   {
-//     "item": {
-//       "__type": "Item",
-//       "name": "akbronco",
-//       "component": "link",
-//       "lastUpdated": "2017-12-26T00:43:11.287Z",
-//       "prices": {
-//         "avg_price": 2.75,
-//         "low": 2.25,
-//         "high": 3.25,
-//         "ducats": 45,
-//         "ducats_per_plat": 16.363636363636363
-//       }
-//     },
-//     "quantity": 1,
-//     "price": 3,
-//     "name": "Yamafan"
-//   },
-//   {
-//     "item": {
-//       "__type": "Item",
-//       "name": "akbronco",
-//       "component": "link",
-//       "lastUpdated": "2017-12-26T00:43:11.287Z",
-//       "prices": {
-//         "avg_price": 2.75,
-//         "low": 2.25,
-//         "high": 3.25,
-//         "ducats": 45,
-//         "ducats_per_plat": 16.363636363636363
-//       }
-//     },
-//     "quantity": 1,
-//     "price": 3,
-//     "name": "sctgod"
-//   },
-//   {
-//     "item": {
-//       "__type": "Item",
-//       "name": "cernos",
-//       "component": "blueprint",
-//       "lastUpdated": "2017-12-26T00:43:05.139Z",
-//       "prices": {
-//         "avg_price": 4.25,
-//         "low": 2.75,
-//         "high": 5.75,
-//         "ducats": 45,
-//         "ducats_per_plat": 10.588235294117647
-//       }
-//     },
-//     "quantity": 1,
-//     "price": 2,
-//     "name": "deadjon1237"
-//   },
-//   {
-//     "item": {
-//       "__type": "Item",
-//       "name": "cernos",
-//       "component": "blueprint",
-//       "lastUpdated": "2017-12-26T00:43:05.139Z",
-//       "prices": {
-//         "avg_price": 4.25,
-//         "low": 2.75,
-//         "high": 5.75,
-//         "ducats": 45,
-//         "ducats_per_plat": 10.588235294117647
-//       }
-//     },
-//     "quantity": 1,
-//     "price": 3,
-//     "name": "YureiBlossom"
-//   },
-//   {
-//     "item": {
-//       "__type": "Item",
-//       "name": "cernos",
-//       "component": "blueprint",
-//       "lastUpdated": "2017-12-26T00:43:05.139Z",
-//       "prices": {
-//         "avg_price": 4.25,
-//         "low": 2.75,
-//         "high": 5.75,
-//         "ducats": 45,
-//         "ducats_per_plat": 10.588235294117647
-//       }
-//     },
-//     "quantity": 1,
-//     "price": 3,
-//     "name": "Catwithagun"
-//   },
-//   {
-//     "item": {
-//       "__type": "Item",
-//       "name": "cernos",
-//       "component": "blueprint",
-//       "lastUpdated": "2017-12-26T00:43:05.139Z",
-//       "prices": {
-//         "avg_price": 4.25,
-//         "low": 2.75,
-//         "high": 5.75,
-//         "ducats": 45,
-//         "ducats_per_plat": 10.588235294117647
-//       }
-//     },
-//     "quantity": 1,
-//     "price": 2,
-//     "name": "Yamafan"
-//   },
-//   {
-//     "item": {
-//       "__type": "Item",
-//       "name": "cernos",
-//       "component": "blueprint",
-//       "lastUpdated": "2017-12-26T00:43:05.139Z",
-//       "prices": {
-//         "avg_price": 4.25,
-//         "low": 2.75,
-//         "high": 5.75,
-//         "ducats": 45,
-//         "ducats_per_plat": 10.588235294117647
-//       }
-//     },
-//     "quantity": 1,
-//     "price": 2,
-//     "name": "Deminast"
-//   },
-//   {
-//     "item": {
-//       "__type": "Item",
-//       "name": "sybaris",
-//       "component": "receiver",
-//       "lastUpdated": "2017-12-26T00:43:02.323Z",
-//       "prices": {
-//         "avg_price": 4.055555555555555,
-//         "low": 4,
-//         "high": 4.111111111111111,
-//         "ducats": 45,
-//         "ducats_per_plat": 11.095890410958905
-//       }
-//     },
-//     "quantity": 1,
-//     "price": 3,
-//     "name": "DefunctDude"
-//   },
-//   {
-//     "item": {
-//       "__type": "Item",
-//       "name": "tigris",
-//       "component": "barrel",
-//       "lastUpdated": "2017-12-26T00:43:01.934Z",
-//       "prices": {
-//         "avg_price": 2.6,
-//         "low": 2.4,
-//         "high": 2.8,
-//         "ducats": 45,
-//         "ducats_per_plat": 17.307692307692307
-//       }
-//     },
-//     "quantity": 1,
-//     "price": 3,
-//     "name": "Sylvantis"
-//   },
-//   {
-//     "item": {
-//       "__type": "Item",
-//       "name": "tigris",
-//       "component": "barrel",
-//       "lastUpdated": "2017-12-26T00:43:01.934Z",
-//       "prices": {
-//         "avg_price": 2.6,
-//         "low": 2.4,
-//         "high": 2.8,
-//         "ducats": 45,
-//         "ducats_per_plat": 17.307692307692307
-//       }
-//     },
-//     "quantity": 1,
-//     "price": 3,
-//     "name": "Yamafan"
-//   },
-//   {
-//     "item": {
-//       "__type": "Item",
-//       "name": "helios",
-//       "component": "blueprint",
-//       "lastUpdated": "2017-12-26T00:43:10.444Z",
-//       "prices": {
-//         "avg_price": 3.375,
-//         "low": 3.25,
-//         "high": 3.5,
-//         "ducats": 45,
-//         "ducats_per_plat": 13.333333333333334
-//       }
-//     },
-//     "quantity": 1,
-//     "price": 3,
-//     "name": "deadjon1237"
-//   },
-//   {
-//     "item": {
-//       "__type": "Item",
-//       "name": "helios",
-//       "component": "blueprint",
-//       "lastUpdated": "2017-12-26T00:43:10.444Z",
-//       "prices": {
-//         "avg_price": 3.375,
-//         "low": 3.25,
-//         "high": 3.5,
-//         "ducats": 45,
-//         "ducats_per_plat": 13.333333333333334
-//       }
-//     },
-//     "quantity": 1,
-//     "price": 3,
-//     "name": "Lostarkofpandora"
-//   },
-//   {
-//     "item": {
-//       "__type": "Item",
-//       "name": "helios",
-//       "component": "blueprint",
-//       "lastUpdated": "2017-12-26T00:43:10.444Z",
-//       "prices": {
-//         "avg_price": 3.375,
-//         "low": 3.25,
-//         "high": 3.5,
-//         "ducats": 45,
-//         "ducats_per_plat": 13.333333333333334
-//       }
-//     },
-//     "quantity": 2,
-//     "price": 3,
-//     "name": "LokenGsun"
-//   },
-//   {
-//     "item": {
-//       "__type": "Item",
-//       "name": "helios",
-//       "component": "blueprint",
-//       "lastUpdated": "2017-12-26T00:43:10.444Z",
-//       "prices": {
-//         "avg_price": 3.375,
-//         "low": 3.25,
-//         "high": 3.5,
-//         "ducats": 45,
-//         "ducats_per_plat": 13.333333333333334
-//       }
-//     },
-//     "quantity": 1,
-//     "price": 3,
-//     "name": "Laederlappen"
-//   }
-// ]`);
     }
-    let ordersPerUser = {};
-    let ducatsPerUser = {};
-    let platPerUser = {};
-    console.log("Collecting orders");
-    orders.forEach((order) => {
-        if (ordersPerUser[order.name] == null) {
-            ordersPerUser[order.name] = [];
-        }
-        if (platPerUser[order.name] == null) {
-            platPerUser[order.name] = 0;
-        }
-        if (ducatsPerUser[order.name] == null) {
-            ducatsPerUser[order.name] = 0;
-        }
-        ducatsPerUser[order.name] += order.quantity * itemIds()[order.item.urlName].ducats;
-        platPerUser[order.name] += order.quantity * order.price;
-        ordersPerUser[order.name].push(order);
-    });
-    console.log("Seperating classes");
-    let seperatedOrders = [
-        {},
-        {}
-    ];
-    Object.keys(ordersPerUser).forEach(((key) => {
-        if (ducatsPerUser[key] / platPerUser[key] > 15) {
-            seperatedOrders[0][key] = ordersPerUser[key];
+    let seperatedOrders: string[][] = [];
+    seperatedOrders[0] = [];
+    seperatedOrders[1] = [];
+    for (let key of orderCollectionByUser.keys()) {
+        let orderCollection = orderCollectionByUser.get(key);
+        if (orderCollection.totalDucats/orderCollection.totalPlat > 15) {
+            seperatedOrders[0].push(key);
         } else {
-            seperatedOrders[1][key] = ordersPerUser[key];
+            seperatedOrders[1].push(key);
         }
-    }));
-    console.log("Assigning class statuses");
+    }
+
     let userRequests: string[] = [];
     seperatedOrders.forEach(aordersPerUser => {
-        let sortedOrders = [];
         (() => {
-            let userOrders = Object.keys(aordersPerUser).map(((key) => {
-                return [key, aordersPerUser[key]];
+            aordersPerUser.sort(((a, b) => {
+                return orderCollectionByUser.get(b).totalDucats - orderCollectionByUser.get(a).totalDucats;
             }));
-            userOrders.sort(((a, b) => {
-                let ATotalValue = 0;
-                a[1].forEach((order) => {
-                    ATotalValue += order.item.prices.ducats * order.quantity
-                });
-                let BTotalValue = 0;
-                b[1].forEach((order) => {
-                    BTotalValue += order.item.prices.ducats * order.quantity
-                });
-                return ATotalValue - BTotalValue;
-            }));
-            sortedOrders = userOrders.reverse();
         })();
-        userRequests.push(orderListToString(sortedOrders));
+        userRequests.push(orderListToString(orderCollectionByUser, aordersPerUser));
     });
     let temp = userRequests.join('\n');
     fs.writeFileSync('./output.txt', temp);
@@ -1267,121 +541,29 @@ async function main(...args) {
         await logBuys(cookie, csrftoken);
     }
     if (process.argv.includes("total")) {
-        await totalOrders(cookie, csrftoken, new Date(2018, 0, 17, 0, 0, 0, 0));
+        await totalOrders(cookie, csrftoken, new Date(2018, 0, 12, 0, 0, 0, 0));
     }
     console.log("Done");
-    process.exit(0);
+    process.exitCode = 0;
     // player.play('done.mp3', err => {});
 }
 
 main();
 
-function orderListToString(orders): string {
+function orderListToString(orderCollectionByUser, orders): string {
     return orders.map((user) => {
         let partString = "";
         let partlist = "";
         let totalplat = 0;
         let totalducats = 0;
-        let sortedOrders = user[1].sort((a, b) => { //Sort greatest ducats per plat to least
-            if (a.quantity < b.quantity) {
-                return 1;
-            } else if (a.quantity > b.quantity) {
-                return -1;
-            }
-            return 0;
+
+        let orderCollection = orderCollectionByUser.get(user);
+
+        let outputString = `/w ${user} Hi! I want to buy: `;
+        outputString += orderCollection.orderGroups.map(group =>  group.toString()).join('\nand ');
+        orderCollection.orderGroups.forEach((group, index) => {
+            partlist += '\n' + group.listItems().map(i => `${i.name} ${i.price} ${i.quantity} (${i.ducats/i.price})`).join('\n');
         });
-        let groups: {group: {index: number, quantity: number}[], plat: number, ducats: number, quantity: number}[] = [];
-        let ordersAccountedFor = user[1].map(v => 0);
-        for (let i = 0; i < sortedOrders.length; i++) {
-            let currentOrder = sortedOrders[i];
-            let currentOrderCount = currentOrder.quantity - ordersAccountedFor[i];
-            if (currentOrderCount > 5) {
-                currentOrderCount = 5;
-            }
-            if (currentOrderCount > 0) {
-                let totalOrderCount = currentOrderCount;
-                let totalPlatCount = currentOrderCount * currentOrder.price;
-                let totalDucatCount = currentOrderCount * itemIds()[currentOrder.item.urlName].ducats;
-                let group: { index: number, quantity: number }[] = [{index: i, quantity: currentOrderCount}];
-
-                for (let j = i + 1; j < sortedOrders.length && totalOrderCount < 5; j++) {
-                    let nextOrder = sortedOrders[j];
-                    let nextOrderCount = nextOrder.quantity - ordersAccountedFor[j];
-                    if (nextOrderCount > 0 && totalOrderCount + nextOrderCount <= 5) {
-                        totalOrderCount += nextOrderCount;
-                        totalPlatCount += nextOrderCount * nextOrder.price;
-                        totalDucatCount += nextOrderCount * itemIds()[nextOrder.item.urlName].ducats;
-                        group.push({
-                            index: j,
-                            quantity: nextOrderCount
-                        });
-                    }
-                }
-
-                if (totalOrderCount == 5) {
-                    group.forEach(v => ordersAccountedFor[v.index] = v.quantity);
-                    groups.push({
-                        group: group,
-                        plat: totalPlatCount,
-                        ducats: totalDucatCount,
-                        quantity: totalOrderCount
-                    });
-                }
-            }
-        }
-        for (let i = 0; i < sortedOrders.length; i++) {
-            let currentOrder = sortedOrders[i];
-            let currentOrderCount = currentOrder.quantity - ordersAccountedFor[i];
-            if (currentOrderCount > 0) {
-                let totalOrderCount = currentOrderCount;
-                let totalPlatCount = currentOrderCount * currentOrder.price;
-                let totalDucatCount = currentOrderCount * itemIds()[currentOrder.item.urlName].ducats;
-                let group: { index: number, quantity: number }[] = [{index: i, quantity: currentOrderCount}];
-
-                for (let j = i + 1; j < sortedOrders.length && totalOrderCount < 5; j++) {
-                    let nextOrder = sortedOrders[j];
-                    let nextOrderCount = nextOrder.quantity - ordersAccountedFor[j];
-                    if (nextOrderCount > 0) {
-                        let addedCount = 0;
-                        if (nextOrderCount > 5 - totalOrderCount) {
-                            addedCount = 5 - totalOrderCount;
-                        } else {
-                            addedCount = nextOrderCount;
-                        }
-                        totalOrderCount += addedCount;
-                        totalPlatCount += addedCount * nextOrder.price;
-                        totalDucatCount += addedCount * itemIds()[nextOrder.item.urlName].ducats;
-                        group.push({
-                            index: j,
-                            quantity: addedCount
-                        });
-                    }
-                }
-
-                group.forEach(v => ordersAccountedFor[v.index] = v.quantity);
-                groups.push({
-                    group: group,
-                    plat: totalPlatCount,
-                    ducats: totalDucatCount,
-                    quantity: totalOrderCount
-                });
-            }
-        }
-        let sortedGroups = groups.sort(((a, b) => {
-            if (a.ducats < b.ducats) {
-                return 1;
-            } else if (a.ducats > b.ducats) {
-                return -1;
-            }
-            return 0;
-        }));
-        let outputString = `/w ${user[0]} Hi! I want to buy: `;
-        outputString += sortedGroups.map(group =>  group.group.map(order => `${order.quantity}x ${sortedOrders[order.index].item.name} ${sortedOrders[order.index].item.component}: ${order.quantity * sortedOrders[order.index].price}:platinum:`).join(', ')).join('\nand ');
-        user[1].forEach((item, index) => {
-            totalplat += item.quantity * item.price;
-            totalducats += item.quantity * itemIds()[item.item.urlName].ducats;
-            partlist += `\n${item.item.urlName} ${item.price} ${item.quantity} (${itemIds()[item.item.urlName].ducats / item.price})`;
-        });
-        return `${outputString}(warframe.market)\nTotal plat: ${totalplat} Total ducats: ${totalducats} (${totalducats / totalplat})${partlist}`;
+        return `${outputString}(warframe.market)\nTotal plat: ${orderCollection.totalPlat} Total ducats: ${orderCollection.totalDucats} (${orderCollection.totalDucats / orderCollection.totalPlat})${partlist}`;
     }).join('\n');
 }
