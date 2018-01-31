@@ -1,40 +1,41 @@
 export class OrderCollection {
-    orderGroups: OrderGroup[];
+    _orderGroups: OrderGroup[];
+
+    get orderGroups(): OrderGroup[] {
+        return this._orderGroups.filter(g => g.totalDucats >= 100);
+    }
 
     constructor(public groupSize: number = 5) {
-        this.orderGroups = [new OrderGroup(this.groupSize)]
+        this._orderGroups = [new OrderGroup(this.groupSize)]
     }
 
     get totalPlat(): number {
+        if (this.orderGroups.length == 0) return 0;
         return this.orderGroups.map(g => g == null ? 0 : g.totalPlat)
-            .reduce((prevPlat, plat) => prevPlat + plat);
+            .reduce((prevPlat, plat, a, b) => prevPlat + plat);
     }
 
     get totalDucats(): number {
+        if (this.orderGroups.length == 0) return 0;
         return this.orderGroups.map(g => g == null ? 0 : g.totalDucats)
-            .reduce((prevDucats, ducats) => prevDucats + ducats);
+            .reduce((prevDucats, ducats, a, b) => prevDucats + ducats);
     }
 
     add(order: Order) {
         for (let i = 0; i < order.quantity; i++) {
             let orderItem: OrderItem = order.item;
             do {
-                for (let i = 0; i < this.orderGroups.length; i++) {
-                    if (this.orderGroups[i].canAdd(orderItem)) {
-                        orderItem = this.orderGroups[i].add(orderItem);
+                for (let i = 0; i < this._orderGroups.length; i++) {
+                    if (this._orderGroups[i].canAdd(orderItem)) {
+                        orderItem = this._orderGroups[i].add(orderItem);
                         break;
                     }
-                    if (i == this.orderGroups.length - 1) {
-                        this.orderGroups.push(new OrderGroup(this.groupSize));
+                    if (i == this._orderGroups.length - 1) {
+                        this._orderGroups.push(new OrderGroup(this.groupSize));
                     }
                 }
             } while (orderItem != null);
         }
-    }
-
-    public listItems(): {quantity: number, price: number, ducats: number}[] {
-
-        return [];
     }
 }
 
