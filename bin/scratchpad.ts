@@ -492,6 +492,69 @@ async function totalOrders(cookie, token, lastKiteerDate) {
     fs.writeFileSync('output.txt', temp);
 }
 
+async function savePriceHistory() {
+    items = new Map<string, Item>();
+    await getRelicDrops();
+    let prices = [];
+    let names: any[];
+
+    function getItemPriceHistory(item: Item) {
+        return new Promise<[string, {
+                avg_price: number, min_price: number, max_price: number, moving_avg: number,
+                median: number, closed_price: number, datetime: string, donch_top: number,
+                donch_bot: number, volume: number, id: string, open_price: number
+            }]>((resolve, reject) => {
+            let result = "";
+            let request = https.request({
+                host: 'api.warframe.market',
+                path: `/v1/items/${item.urlName}/statistics?include=item`,
+                headers: {
+                    'Language': 'end',
+                    'Platform': 'pc',
+                    'Content-Type': 'application/json'
+                },
+                agent: userAgent
+            }, response => {
+                response.on('data', (data) => {
+                    result += data;
+                });
+                response.on('end', () => {
+                    let resultObj = JSON.parse(result);
+                    let itemPriceData = resultObj['payload']['statistics']['90days'];
+                    resolve(itemPriceData.map(i => [
+                        i["closed_price"] || 0,
+                        i["min_price"] || 0,
+                        i["avg_price"] || 0,
+                        i["median"] || 0,
+                        Math.floor(new Date(i["datetime"]).getTime()/1000),
+                        i["moving_avg"] || 0,
+                        i["donch_top"] || 0,
+                        i["donch_bot"] || 0,
+                        i["volume"] || 0,
+                        i["max_price"] || 0,
+                        i["id"],
+                        i["open_price"] || 0
+                    ]));
+                });
+            });
+            request.on('error', (err) => {
+                reject(err);
+            });
+            request.end();
+        });
+    }
+
+    let stream = fs.createWriteStream(`history-${Math.ceil(Math.floor((new Date().getTime()/1000)-1517431503)/(60*60*24))}.csv`, {flags: 'a'});
+    await rateLimitedFunctionCalls(items, getItemPriceHistory, (item, result: any[]) => {
+        result.forEach((v) => {
+            let result = [item].concat(v);
+            stream.write(result.join(',')+'\n');
+        });
+    });
+    stream.end();
+    console.log("History logged");
+}
+
 async function main(...args) {
     // player.play('start.mp3', err => {});
     const cookie = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJqd3RfaWRlbnRpdHkiOiJRSkxUQ09SeWZDdUlwNGVQb3JZaUlyeVdDb09zZjFqMCIsImxvZ2luX3VhIjoiYidNb3ppbGxhLzUuMCAoV2luZG93cyBOVCAxMC4wOyBXaW42NDsgeDY0OyBydjo1Ny4wKSBHZWNrby8yMDEwMDEwMSBGaXJlZm94LzU3LjAnIiwiYXV0aF9tZXRob2QiOiJjb29raWUiLCJzZWN1cmUiOmZhbHNlLCJzaWQiOiI1RTNCZGw1Q2IzSFNOSlpacDUyQVJKSEtvdjF1MVhQYSIsImF1ZCI6Imp3dCIsImNzcmZfdG9rZW4iOiI5OGRjZWRlN2Y5Mjc1ZmIyZTc3MWM1YjdmOTQ1MmY2NmI5ZmUxYWQ1IiwiZXhwIjoxNTIwNDY0MzY1LCJpc3MiOiJqd3QiLCJpYXQiOjE1MTUyODAzNjUsImxvZ2luX2lwIjoiYicxOTkuMTcuNTUuMTY0JyJ9.KeUATSWUoIeGwG13OH-yeGzg1bh4BVKFWWVfQc_MURk';
@@ -504,7 +567,7 @@ async function main(...args) {
         console.log("Waiting for user input:");
         await new Promise((resolve) => {
             const stdin = process.openStdin();
-            stdin.addListener('data', d => {resolve()});
+            stdin.addListener('data', d => {stdin.destroy(); resolve()});
             stdin.addListener('end', () => {});
         });
         console.log("Got user input.");
@@ -514,6 +577,9 @@ async function main(...args) {
     }
     if (process.argv.includes("total")) {
         await totalOrders(cookie, csrftoken, new Date(2018, 0, 12, 0, 0, 0, 0));
+    }
+    if (process.argv.includes("history")) {
+        await savePriceHistory();
     }
     console.log("Done");
     process.exitCode = 0;
